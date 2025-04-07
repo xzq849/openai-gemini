@@ -5,7 +5,9 @@
  * into HTML responses for performance monitoring.
  */
 
-import { inject } from '@vercel/speed-insights';
+import { injectSpeedInsights } from '@vercel/speed-insights';
+
+// Use the injectSpeedInsights function from the package
 
 /**
  * Injects the Vercel Speed Insights script into an HTML string
@@ -14,7 +16,8 @@ import { inject } from '@vercel/speed-insights';
  * @returns {string} - The HTML content with the Speed Insights script injected
  */
 export function injectSpeedInsightsToHtml(html) {
-  return inject(html);
+  // Use the injectSpeedInsights function directly
+  return injectSpeedInsights(html);
 }
 
 /**
