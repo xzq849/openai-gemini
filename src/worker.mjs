@@ -1,5 +1,4 @@
 import { Buffer } from "node:buffer";
-import { injectSpeedInsightsToResponse } from "./inject-speed-insights.mjs";
 
 export default {
   async fetch (request) {
@@ -9,24 +8,6 @@ export default {
     const errHandler = (err) => {
       console.error(err);
       return new Response(err.message, fixCors({ status: err.status ?? 500 }));
-    };
-    
-    // Helper function to process responses and inject Speed Insights if needed
-    const processResponse = async (responsePromise) => {
-      try {
-        const response = await responsePromise;
-        // Check if the response is HTML and inject Speed Insights if it is
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('text/html')) {
-          return injectSpeedInsightsToResponse(response);
-        }
-        return response;
-      } catch (error) {
-        console.error('Error in processResponse:', error);
-        // If there's an error, return a generic response
-        return new Response('An error occurred while processing the response', 
-          fixCors({ status: 500 }));
-      }
     };
     try {
       const auth = request.headers.get("Authorization");
@@ -40,45 +21,17 @@ export default {
       switch (true) {
         case pathname.endsWith("/chat/completions"):
           assert(request.method === "POST");
-          return processResponse(handleCompletions(await request.json(), apiKey)
-            .catch(errHandler));
+          return handleCompletions(await request.json(), apiKey)
+            .catch(errHandler);
         case pathname.endsWith("/embeddings"):
           assert(request.method === "POST");
-          return processResponse(handleEmbeddings(await request.json(), apiKey)
-            .catch(errHandler));
+          return handleEmbeddings(await request.json(), apiKey)
+            .catch(errHandler);
         case pathname.endsWith("/models"):
           assert(request.method === "GET");
-          return processResponse(handleModels(apiKey)
-            .catch(errHandler));
+          return handleModels(apiKey)
+            .catch(errHandler);
         default:
-          // For any other routes, check if we need to serve HTML content
-          // This allows for future expansion to serve HTML pages
-          if (pathname === "/" || pathname.endsWith(".html")) {
-            // If we're serving the root or an HTML file, create a simple HTML response
-            // that includes Speed Insights for demonstration purposes
-            const htmlResponse = new Response(
-              `<!DOCTYPE html>
-<html>
-<head>
-  <title>OpenAI-Gemini API</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-</head>
-<body>
-  <h1>OpenAI-Gemini API</h1>
-  <p>This is an API endpoint. Please use it with compatible clients.</p>
-  <p>For more information, see the <a href="https://github.com/PublicAffairs/openai-gemini">documentation</a>.</p>
-  <!-- Speed Insights will be automatically injected here -->
-</body>
-</html>`,
-              {
-                headers: {
-                  "content-type": "text/html",
-                  ...fixCors({}).headers
-                }
-              }
-            );
-            return processResponse(htmlResponse);
-          }
           throw new HttpError("404 Not Found", 404);
       }
     } catch (err) {
