@@ -16,8 +16,14 @@ import { injectSpeedInsights } from '@vercel/speed-insights';
  * @returns {string} - The HTML content with the Speed Insights script injected
  */
 export function injectSpeedInsightsToHtml(html) {
-  // Use the injectSpeedInsights function directly
-  return injectSpeedInsights(html);
+  try {
+    // Use the injectSpeedInsights function directly
+    return injectSpeedInsights(html);
+  } catch (error) {
+    console.error('Error injecting Speed Insights:', error);
+    // Return the original HTML if there's an error
+    return html;
+  }
 }
 
 /**
@@ -27,21 +33,27 @@ export function injectSpeedInsightsToHtml(html) {
  * @returns {Promise<Response>} - A new Response with Speed Insights injected
  */
 export async function injectSpeedInsightsToResponse(response) {
-  // Only process HTML responses
-  const contentType = response.headers.get('content-type');
-  if (!contentType || !contentType.includes('text/html')) {
+  try {
+    // Only process HTML responses
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('text/html')) {
+      return response;
+    }
+
+    // Clone the response to avoid consuming the original
+    const clonedResponse = response.clone();
+    const html = await clonedResponse.text();
+    const injectedHtml = injectSpeedInsightsToHtml(html);
+
+    // Create a new response with the injected HTML
+    return new Response(injectedHtml, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers
+    });
+  } catch (error) {
+    console.error('Error processing response for Speed Insights:', error);
+    // Return the original response if there's an error
     return response;
   }
-
-  // Clone the response to avoid consuming the original
-  const clonedResponse = response.clone();
-  const html = await clonedResponse.text();
-  const injectedHtml = injectSpeedInsightsToHtml(html);
-
-  // Create a new response with the injected HTML
-  return new Response(injectedHtml, {
-    status: response.status,
-    statusText: response.statusText,
-    headers: response.headers
-  });
 }

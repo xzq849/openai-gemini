@@ -13,13 +13,20 @@ export default {
     
     // Helper function to process responses and inject Speed Insights if needed
     const processResponse = async (responsePromise) => {
-      const response = await responsePromise;
-      // Check if the response is HTML and inject Speed Insights if it is
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('text/html')) {
-        return injectSpeedInsightsToResponse(response);
+      try {
+        const response = await responsePromise;
+        // Check if the response is HTML and inject Speed Insights if it is
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('text/html')) {
+          return injectSpeedInsightsToResponse(response);
+        }
+        return response;
+      } catch (error) {
+        console.error('Error in processResponse:', error);
+        // If there's an error, return a generic response
+        return new Response('An error occurred while processing the response', 
+          fixCors({ status: 500 }));
       }
-      return response;
     };
     try {
       const auth = request.headers.get("Authorization");
